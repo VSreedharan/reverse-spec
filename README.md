@@ -20,11 +20,20 @@ These two documents form a **baseline**. Future enhancements and bug fixes can r
 ```
 ┌─────────────────┐     ┌─────────────────┐
 │  Existing Code  │────▶│  reverse-spec   │────▶ PRD-[service].md
-└─────────────────┘     └─────────────────┘
-         │
-         │              ┌─────────────────┐
+└─────────────────┘     └─────────────────┘           │
+         │                                            │
+         │              ┌─────────────────┐           │
          └─────────────▶│  reverse-arch   │────▶ TSD-[service].md
-                        └─────────────────┘
+                        └─────────────────┘           │
+                                                      │
+                                                      ▼
+                                             ┌──────────────────┐
+                                             │   AI Dev Tasks   │
+                                             │ (generate-tasks) │
+                                             └──────────────────┘
+                                                      │
+                                                      ▼
+                                               Actionable Tasks
 ```
 
 Both prompts follow the same multi-turn approach:
@@ -79,23 +88,29 @@ The companion PRD is at @PRD-[service].md for functional context.
 
 The AI will follow the same flow and generate `TSD-[service].md`.
 
-### Step 3: Use for Enhancements
+### Step 3: Generate Tasks (using AI Dev Tasks)
 
-With both documents in place, planning future work becomes easier:
+Now that you have your baseline documents, use [AI Dev Tasks](https://github.com/snarktank/ai-dev-tasks) to generate actionable tasks for your enhancement.
+
+Download `generate-tasks.md` from the [ai-dev-tasks repo](https://github.com/snarktank/ai-dev-tasks) and use it with your new specs.
 
 **Prompt:**
 ```text
-I need to add a new feature to this service.
+Use @generate-tasks.md
+
+I need to add a new feature: [Feature Name, e.g., "Partial Refunds"]
 
 Context:
-- PRD: @PRD-order-service.md
-- TSD: @TSD-order-service.md
+- Baseline PRD: @PRD-[service].md
+- Baseline Tech Spec: @TSD-[service].md
 
-Enhancement Request:
-Add support for partial refunds. Users should be able to refund individual line items from an order, not just the full order.
+Enhancement Requirement:
+[Describe your feature here, e.g., "Users should be able to refund individual line items from an order, not just the full order."]
 
 Please generate a list of tasks and sub-tasks for this enhancement.
 ```
+
+This ensures your new tasks are grounded in the reality of your existing system.
 
 ---
 
@@ -105,14 +120,7 @@ Please generate a list of tasks and sub-tasks for this enhancement.
 |------|--------|--------|
 | 1 | Run `reverse-spec.md` | `PRD-[service].md` |
 | 2 | Run `reverse-arch.md` | `TSD-[service].md` |
-| 3 | Use both docs for enhancement/bugfix planning | Task list |
-
-**Why sequential?**
-- PRD establishes functional context that TSD can reference
-- Keeps questions focused (functional vs. technical)
-- Smaller, more manageable chat sessions
-
-**Alternative:** Run both prompts in parallel (separate chat sessions) if you're familiar with the codebase and want speed.
+| 3 | Run `generate-tasks.md` (from AI Dev Tasks) | Actionable Task List |
 
 ---
 
