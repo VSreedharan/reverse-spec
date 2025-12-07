@@ -8,22 +8,24 @@ It guides an AI assistant to analyze your codebase, ask clarifying questions, an
 
 ## Why This Matters
 
-Enterprises inherit legacy systems with incomplete or outdated documentation. Before enhancing a system, you need to understand:
+Enterprises inherit legacy systems with incomplete or outdated documentation. To practice **Spec-Driven Development (SDD)**, you first need a reliable baseline.
 
-1.  **What does it do?** → PRD (Product Requirements Document)
-2.  **How is it built?** → TSD (Technical Specification Document)
-
-These two documents form a **baseline**. Future enhancements and bug fixes can reference them to understand scope, impact, and context.
+1.  **Baseline:** Extract the current state into a PRD & Tech Spec.
+2.  **Spec Phase:** Update the PRD to reflect the *new* feature (Target State).
+3.  **Task Phase:** Generate tasks to bridge the gap between the Tech Spec (Current State) and the updated PRD (Target State).
 
 ## Workflow
 
 ```
 ┌─────────────────┐     ┌─────────────────┐
-│  Existing Code  │────▶│  reverse-spec   │────▶ PRD-[service].md
+│  Existing Code  │────▶│  reverse-spec   │────▶ Baseline PRD
 └─────────────────┘     └─────────────────┘           │
+         │                                            │ (Add Feature)
+         │                                            ▼
+         │                                       Target PRD
          │                                            │
          │              ┌─────────────────┐           │
-         └─────────────▶│  reverse-arch   │────▶ TSD-[service].md
+         └─────────────▶│  reverse-arch   │────▶ Baseline TSD
                         └─────────────────┘           │
                                                       │
                                                       ▼
@@ -36,13 +38,6 @@ These two documents form a **baseline**. Future enhancements and bug fixes can r
                                                Actionable Tasks
 ```
 
-Both prompts follow the same multi-turn approach:
-
-1.  **Analyze** — AI scans the code and summarizes findings.
-2.  **Confidence Check** — AI categorizes findings as Verified, Needs Confirmation, or Assumed.
-3.  **Clarify** — AI asks targeted questions (you answer with "1A, 2B, 3C").
-4.  **Generate** — AI produces the final document.
-
 ## Files
 
 | File | Purpose | Output |
@@ -54,9 +49,9 @@ Both prompts follow the same multi-turn approach:
 
 ## Usage
 
-### Step 1: Generate PRD (Functional Requirements)
+### Step 1: Generate Baseline PRD
 
-Start with the PRD to document *what* the system does.
+Start with the PRD to document *what* the system does today.
 
 **Prompt:**
 ```text
@@ -64,18 +59,12 @@ Use @reverse-spec.md
 
 Analyze the codebase at @/path/to/your/service and generate a Product Requirements Document (PRD).
 
-This service is: [brief description, e.g., "an order management microservice that handles order creation, payment processing, and fulfillment tracking"].
+This service is: [brief description].
 ```
 
-The AI will:
-1. Analyze the code and present a summary
-2. Ask clarifying questions (e.g., "Should I document v1 and v2 endpoints, or just v2?")
-3. Wait for your answers (respond with "1A, 2B, 3C" format)
-4. Generate `PRD-[service].md`
+### Step 2: Generate Baseline TSD
 
-### Step 2: Generate TSD (Technical Specification)
-
-After the PRD is complete, generate the TSD to document *how* it's built.
+Document *how* it is built today.
 
 **Prompt:**
 ```text
@@ -86,31 +75,43 @@ Analyze the codebase at @/path/to/your/service and generate a Technical Specific
 The companion PRD is at @PRD-[service].md for functional context.
 ```
 
-The AI will follow the same flow and generate `TSD-[service].md`.
+### Step 3: Update PRD (The Spec Phase)
 
-### Step 3: Generate Tasks (using AI Dev Tasks)
+**This is the most critical step for SDD.** Before generating tasks, update the PRD to reflect the *future* state.
 
-Now that you have your baseline documents, use [AI Dev Tasks](https://github.com/snarktank/ai-dev-tasks) to generate actionable tasks for your enhancement.
+**Prompt:**
+```text
+I need to update the PRD for a new feature.
 
-Download `generate-tasks.md` from the [ai-dev-tasks repo](https://github.com/snarktank/ai-dev-tasks) and use it with your new specs.
+Current PRD: @PRD-[service].md
+
+New Feature Request:
+[Describe feature, e.g., "Add support for partial refunds."]
+
+Please update the PRD to include this new feature.
+- Add it to Functional Requirements.
+- Update Business Rules if applicable.
+- Update API/Edge Cases if applicable.
+
+Output the full updated PRD markdown.
+```
+
+*Save the output as the new version of `PRD-[service].md`.*
+
+### Step 4: Generate Tasks (The Implementation Phase)
+
+Now, use [AI Dev Tasks](https://github.com/snarktank/ai-dev-tasks) to bridge the gap between your **Target PRD** and your **Baseline TSD**.
 
 **Prompt:**
 ```text
 Use @generate-tasks.md
 
-I need to add a new feature: [Feature Name, e.g., "Partial Refunds"]
-
 Context:
-- Baseline PRD: @PRD-[service].md
-- Baseline Tech Spec: @TSD-[service].md
+- Target PRD (What we want): @PRD-[service].md
+- Baseline Tech Spec (What we have): @TSD-[service].md
 
-Enhancement Requirement:
-[Describe your feature here, e.g., "Users should be able to refund individual line items from an order, not just the full order."]
-
-Please generate a list of tasks and sub-tasks for this enhancement.
+Please generate a list of tasks and sub-tasks to implement the changes defined in the Target PRD, given the architectural constraints in the Baseline TSD.
 ```
-
-This ensures your new tasks are grounded in the reality of your existing system.
 
 ---
 
@@ -118,18 +119,10 @@ This ensures your new tasks are grounded in the reality of your existing system.
 
 | Step | Action | Output |
 |------|--------|--------|
-| 1 | Run `reverse-spec.md` | `PRD-[service].md` |
-| 2 | Run `reverse-arch.md` | `TSD-[service].md` |
-| 3 | Run `generate-tasks.md` (from AI Dev Tasks) | Actionable Task List |
-
----
-
-## Tips
-
-- **Be specific about scope:** If analyzing a monorepo, point to the specific service directory.
-- **Provide context:** A one-line description of what the service does helps the AI focus.
-- **Skip questions if needed:** Say "skip questions" to have the AI proceed with stated assumptions.
-- **Iterate:** If the output misses something, ask the AI to add or revise specific sections.
+| 1 | Run `reverse-spec.md` | Baseline PRD |
+| 2 | Run `reverse-arch.md` | Baseline TSD |
+| 3 | **Prompt AI to update PRD** | **Target PRD** |
+| 4 | Run `generate-tasks.md` | Task List |
 
 ---
 
